@@ -1,0 +1,55 @@
+name: Build Eng-MM Ultimate Dictionary
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'eng-mm-ultimate/**'
+      - '.github/workflows/eng-mm-ultimate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install builder dependencies
+        run: pip install --disable-pip-version-check requests beautifulsoup4 lemminflect
+      - name: Build dictionary source
+        working-directory: eng-mm-ultimate
+        run: python build_eng_mm.py
+      - name: Install Kindling Kindle compiler
+        run: |
+          curl -fL --retry 3 'https://github.com/ciscoriordan/kindling/releases/download/v0.38.0/kindling-cli-linux' -o /tmp/kindling-cli
+          echo '67b58ba9f5f7f3e2e7602ccf5c1232bb22a49f95532981645ea3c106b8656b05  /tmp/kindling-cli' | sha256sum -c -
+          chmod +x /tmp/kindling-cli
+          /tmp/kindling-cli --version
+      - name: Compile MOBI
+        working-directory: eng-mm-ultimate
+        run: |
+          /tmp/kindling-cli build build/eng-mm-ultimate.opf -o build/Eng-MM-Ultimate-Dictionary.mobi
+          ls -lh build/Eng-MM-Ultimate-Dictionary.mobi
+      - name: Smoke-test Kindle lookup indexes
+        working-directory: eng-mm-ultimate
+        run: |
+          for w in went running better children "can't"; do
+            echo "===== LOOKUP: $w ====="
+            /tmp/kindling-cli lookup build/Eng-MM-Ultimate-Dictionary.mobi "$w" || true
+          done
+      - name: Upload dictionary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Eng-MM-Ultimate-Dictionary
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            eng-mm-ultimate/build/Eng-MM-Ultimate-Dictionary.mobi
+            eng-mm-ultimate/build/build-stats.json
+            eng-mm-ultimate/build/NOTICE.txt

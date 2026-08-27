@@ -3,18 +3,22 @@ plugins {
 }
 
 android {
-    namespace 'com.whisper.library'
+    namespace 'com.whisper.wowlibrary'
     compileSdk 35
 
     defaultConfig {
-        applicationId 'com.whisper.library'
-        minSdk 23
-        targetSdk 35
-        versionCode 1
-        versionName '1.0.0'
+        applicationId 'com.whisper.wowlibrary'
+        minSdk 21
+        targetSdk 30
+        versionCode 2
+        versionName '1.0.1'
     }
 
     buildTypes {
+        debug {
+            debuggable true
+            minifyEnabled false
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
